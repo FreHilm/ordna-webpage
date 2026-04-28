@@ -716,7 +716,7 @@
   <div class="container hero-inner">
     <span class="eyebrow">
       <span class="dot">O</span>
-      <strong>Ordna 0.4</strong>
+      <strong>Ordna <!--0.4--></strong>
       <span class="div"></span>
       <span class="ver">CLI · Web · Core</span>
       <span class="div"></span>
@@ -923,7 +923,7 @@
 <span class="prompt">$</span> npm install -g <span class="v">@frehilm/ordna-cli</span>
 
 <span class="c"># Or run without installing</span>
-<span class="prompt">$</span> npx <span class="v">@frehilm/ordna-cli</span> init
+<span class="prompt">$</span> npx <span class="v">@frehilm/ordna-cli</span> ordna
 
 <span class="c"># Open the keyboard-driven board in your repo</span>
 <span class="prompt">$</span> ordna
@@ -1241,7 +1241,7 @@
       } catch (e) {}
     });
   }
-  attachCopy('copy-headline', () => 'npx @frehilm/ordna-cli init');
+  attachCopy('copy-headline', () => 'npx @frehilm/ordna-cli ordna');
   attachCopy('cb-copy', () => {
     const visible = Object.values(panes).find(p => p.style.display !== 'none') || panes.cli;
     return visible.innerText;
