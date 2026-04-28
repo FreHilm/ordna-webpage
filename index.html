@@ -1,0 +1,1252 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ordna — Local, git-based, agent-ready Kanban</title>
+<meta name="description" content="A Kanban that lives in your repo. Run it in your terminal, in your browser, or wire it straight into your agents. No servers, no logins, no lock-in." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --bg: #0B0B0F;
+    --bg-2: #101015;
+    --bg-3: #15151D;
+    --bg-4: #1B1B25;
+    --line: #232330;
+    --line-2: #2E2E40;
+    --ink: #ECECF1;
+    --ink-2: #B6B6C7;
+    --ink-3: #6E6E84;
+    --ink-4: #3D3D52;
+
+    --amber: #F5B547;
+    --amber-soft: #F5B54722;
+    --amber-line: #F5B54744;
+
+    --blue: #6B8AFD;
+    --violet: #A06BFD;
+    --grad: linear-gradient(135deg, #6B8AFD 0%, #8A6BFD 50%, #A06BFD 100%);
+
+    --green: #4ADE80;
+    --red: #FF6B7A;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--amber); color: #1a1208; }
+
+  .mono { font-family: 'Geist Mono', ui-monospace, monospace; }
+  .serif { font-family: 'Instrument Serif', serif; font-style: italic; font-weight: 400; }
+  .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .amber-text { color: var(--amber); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+
+  /* ---------- NAV ---------- */
+  nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    background: rgba(11,11,15,.72);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner { display: flex; align-items: center; gap: 32px; height: 64px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); }
+  .brand-logo { width: 28px; height: 28px; border-radius: 7px; }
+  .brand-name { font-weight: 600; letter-spacing: -0.01em; font-size: 17px; }
+  .brand-domain { color: var(--ink-3); font-family: 'Geist Mono', monospace; font-size: 12px; padding-left: 10px; border-left: 1px solid var(--line); margin-left: 4px; }
+  .nav-links { display: flex; gap: 26px; margin-left: 16px; }
+  .nav-links a { color: var(--ink-2); text-decoration: none; font-size: 13.5px; transition: color .15s; }
+  .nav-links a:hover { color: var(--ink); }
+  .nav-spacer { flex: 1; }
+  .nav-cta { display: flex; gap: 10px; align-items: center; }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 32px; padding: 0 12px;
+    border-radius: 999px;
+    background: var(--bg-3); border: 1px solid var(--line);
+    color: var(--ink-2); font-size: 12.5px;
+    font-family: 'Geist Mono', monospace;
+    text-decoration: none;
+    transition: border-color .15s, color .15s;
+  }
+  .pill:hover { border-color: var(--line-2); color: var(--ink); }
+  .pill svg { width: 13px; height: 13px; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 38px; padding: 0 16px;
+    border-radius: 8px;
+    font-size: 13.5px; font-weight: 500;
+    text-decoration: none;
+    border: 1px solid transparent;
+    cursor: pointer; font-family: inherit;
+    transition: transform .12s, background .15s, border-color .15s, box-shadow .15s;
+  }
+  .btn-primary {
+    background: var(--amber); color: #1a1208;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.08) inset, 0 1px 0 rgba(255,255,255,.3) inset, 0 8px 24px -10px rgba(245,181,71,.6);
+  }
+  .btn-primary:hover { transform: translateY(-1px); }
+  .btn-ghost {
+    background: var(--bg-3); border-color: var(--line); color: var(--ink);
+  }
+  .btn-ghost:hover { border-color: var(--line-2); }
+
+  /* ---------- HERO ---------- */
+  .hero { position: relative; padding: 88px 0 56px; overflow: hidden; }
+  .hero-glow {
+    position: absolute; top: -260px; left: 50%; transform: translateX(-50%);
+    width: 1100px; height: 900px;
+    background: radial-gradient(circle, rgba(245,181,71,.10) 0%, rgba(245,181,71,0) 60%);
+    pointer-events: none; z-index: 0;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, #000 30%, transparent 80%);
+    pointer-events: none;
+  }
+  .hero-inner { position: relative; z-index: 1; }
+
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 5px 14px 5px 5px;
+    border-radius: 999px;
+    background: var(--bg-3); border: 1px solid var(--line);
+    font-size: 12px; color: var(--ink-2);
+    margin-bottom: 28px;
+  }
+  .eyebrow .dot {
+    width: 20px; height: 20px; border-radius: 999px;
+    background: var(--amber);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #1a1208; font-size: 10px; font-weight: 700;
+  }
+  .eyebrow .div { width: 1px; height: 12px; background: var(--line-2); }
+  .eyebrow strong { color: var(--ink); font-weight: 500; }
+  .eyebrow .ver { color: var(--ink-3); font-family: 'Geist Mono', monospace; font-size: 11px; }
+
+  h1.hero-title {
+    font-size: clamp(46px, 7vw, 88px);
+    line-height: 0.96;
+    letter-spacing: -0.038em;
+    font-weight: 500;
+    margin: 0 0 26px;
+    max-width: 920px;
+  }
+  h1.hero-title .serif { letter-spacing: -0.005em; }
+
+  .hero-sub {
+    font-size: 19px; line-height: 1.5;
+    color: var(--ink-2);
+    max-width: 600px;
+    margin: 0 0 36px;
+  }
+
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 56px; }
+  .install-line {
+    display: inline-flex; align-items: center; gap: 12px;
+    height: 38px; padding: 0 6px 0 16px;
+    border-radius: 8px;
+    background: var(--bg-3); border: 1px solid var(--line);
+    font-family: 'Geist Mono', monospace;
+    font-size: 13px; color: var(--ink);
+  }
+  .install-line .dim { color: var(--ink-3); }
+  .install-line button {
+    height: 28px; width: 28px;
+    border: none; background: var(--bg-2);
+    border-radius: 5px; color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .install-line button:hover { color: var(--ink); background: var(--line); }
+
+  /* ---------- SHOWCASE (real screenshots) ---------- */
+  .showcase {
+    position: relative;
+    margin-top: 24px;
+  }
+  .showcase-tabs {
+    display: inline-flex;
+    padding: 4px;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 18px;
+    gap: 2px;
+  }
+  .showcase-tabs button {
+    background: transparent; border: none;
+    color: var(--ink-2);
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 13px; font-family: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background .15s, color .15s;
+  }
+  .showcase-tabs button.active {
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line-2);
+  }
+  .showcase-tabs button svg { width: 14px; height: 14px; }
+  .showcase-tabs .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--amber);
+    box-shadow: 0 0 0 0 rgba(245,181,71,.5);
+    animation: pulse 2.4s ease-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245,181,71,.5); }
+    50% { box-shadow: 0 0 0 6px rgba(245,181,71,0); }
+  }
+
+  .showcase-frame {
+    position: relative;
+    border-radius: 14px;
+    background: linear-gradient(180deg, var(--bg-3) 0%, var(--bg-2) 100%);
+    border: 1px solid var(--line);
+    box-shadow:
+      0 60px 140px -40px rgba(245,181,71,.18),
+      0 30px 80px -30px rgba(0,0,0,.6),
+      0 0 0 1px rgba(255,255,255,.02) inset;
+    overflow: hidden;
+  }
+  .frame-chrome {
+    display: flex; align-items: center;
+    height: 38px;
+    padding: 0 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-2);
+    gap: 10px;
+  }
+  .traffic { display: flex; gap: 7px; }
+  .traffic span { width: 11px; height: 11px; border-radius: 50%; }
+  .traffic .r { background: #ff5f57; }
+  .traffic .y { background: #febc2e; }
+  .traffic .g { background: #28c840; }
+  .chrome-title {
+    flex: 1; text-align: center;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px; color: var(--ink-3);
+  }
+  .chrome-title .amber-text { color: var(--amber); }
+  .chrome-side { width: 56px; }
+
+  .frame-body {
+    position: relative;
+    background: #0a0a0f;
+  }
+  .frame-body img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .frame-pane { display: none; }
+  .frame-pane.active { display: block; }
+
+  .frame-caption {
+    position: absolute;
+    left: 18px; bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px;
+    background: rgba(11,11,15,.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-2);
+  }
+  .frame-caption .marker { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+
+  /* ---------- TICKER ---------- */
+  .ticker {
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    padding: 26px 0;
+    margin-top: 88px;
+    background: var(--bg-2);
+  }
+  .ticker-label {
+    text-align: center;
+    color: var(--ink-3);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-bottom: 16px;
+  }
+  .ticker-row {
+    display: flex; gap: 40px; justify-content: center; flex-wrap: wrap;
+    color: var(--ink-2);
+    font-family: 'Geist Mono', monospace;
+    font-size: 12.5px;
+  }
+  .ticker-row span { display: inline-flex; align-items: center; gap: 8px; }
+  .ticker-row svg { width: 14px; height: 14px; opacity: .8; color: var(--amber); }
+
+  /* ---------- SECTIONS ---------- */
+  section.block { padding: 120px 0 40px; position: relative; }
+  .sec-eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-bottom: 18px;
+  }
+  .sec-eyebrow::before { content: ""; width: 18px; height: 1px; background: var(--amber); }
+  h2.sec-title {
+    font-size: clamp(38px, 4.8vw, 58px);
+    line-height: 1.02;
+    letter-spacing: -0.028em;
+    font-weight: 500;
+    margin: 0 0 18px;
+    max-width: 780px;
+  }
+  .sec-sub {
+    font-size: 17.5px;
+    color: var(--ink-2);
+    max-width: 640px;
+    margin: 0 0 56px;
+  }
+
+  /* ---------- WHY GRID ---------- */
+  .why-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .why { background: var(--bg); padding: 30px 28px; position: relative; }
+  .why.span-6 { grid-column: span 6; }
+  .why.span-4 { grid-column: span 4; }
+  .why-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    background: var(--amber-soft);
+    border: 1px solid var(--amber-line);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--amber);
+    margin-bottom: 18px;
+  }
+  .why-icon svg { width: 18px; height: 18px; }
+  .why h3 {
+    font-size: 18px;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    font-weight: 500;
+  }
+  .why p { color: var(--ink-2); font-size: 14px; line-height: 1.55; margin: 0; }
+
+  .feature-illu {
+    margin-top: 22px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    padding: 14px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    line-height: 1.7;
+  }
+  .feature-illu .ln-add { color: var(--green); }
+  .feature-illu .ln-del { color: var(--red); }
+  .feature-illu .ln-meta { color: var(--ink-3); }
+  .feature-illu .file { color: var(--amber); }
+
+  /* ---------- INSTALL ---------- */
+  .install-tabs {
+    display: inline-flex;
+    padding: 4px;
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    margin-bottom: 28px;
+    gap: 2px;
+  }
+  .install-tabs button {
+    background: transparent; border: none;
+    color: var(--ink-2);
+    padding: 8px 16px;
+    border-radius: 7px;
+    font-size: 13px; font-family: inherit; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: background .15s, color .15s;
+  }
+  .install-tabs button.active {
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow: 0 0 0 1px var(--line-2);
+  }
+  .install-tabs button svg { width: 14px; height: 14px; }
+
+  .install-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  .codeblock {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .codeblock-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-3);
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .codeblock-head .file { color: var(--ink-2); }
+  .codeblock-head button {
+    background: transparent; border: 1px solid var(--line);
+    color: var(--ink-3); padding: 4px 10px; border-radius: 5px;
+    font-size: 11px; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .codeblock-head button:hover { color: var(--ink); border-color: var(--line-2); }
+  .codeblock pre {
+    margin: 0; padding: 18px;
+    overflow-x: auto;
+    font-family: 'Geist Mono', monospace;
+    font-size: 13px; line-height: 1.7;
+    color: var(--ink);
+    flex: 1;
+  }
+  pre .c { color: var(--ink-3); }
+  pre .k { color: #9eb4ff; }
+  pre .s { color: var(--amber); }
+  pre .v { color: #b89aff; }
+  pre .f { color: var(--green); }
+  pre .p { color: var(--ink-2); }
+  pre .prompt { color: var(--amber); }
+
+  .install-side {
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 22px;
+  }
+  .install-side h4 { margin: 0 0 4px; font-size: 14px; font-weight: 500; color: var(--ink); }
+  .install-side p { margin: 0 0 18px; color: var(--ink-2); font-size: 13.5px; }
+  .install-side .npm-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .install-side .npm-row:last-of-type { border-bottom: none; padding-bottom: 0; }
+  .install-side .npm-row:first-of-type { padding-top: 0; }
+  .npm-row .name { font-family: 'Geist Mono', monospace; font-size: 12.5px; color: var(--ink); }
+  .npm-row .desc { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; }
+  .npm-row a {
+    font-size: 11px; color: var(--ink-2); text-decoration: none;
+    padding: 4px 10px;
+    border: 1px solid var(--line); border-radius: 5px;
+    font-family: 'Geist Mono', monospace;
+    transition: color .15s, border-color .15s;
+  }
+  .npm-row a:hover { color: var(--amber); border-color: var(--amber-line); }
+
+  /* ---------- LIBRARY ---------- */
+  .lib-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 32px;
+    align-items: start;
+  }
+  .lib-copy h3 { font-size: 22px; letter-spacing: -0.015em; font-weight: 500; margin: 0 0 10px; }
+  .lib-copy p { color: var(--ink-2); font-size: 15px; }
+  .lib-features {
+    margin-top: 28px;
+    display: flex; flex-direction: column;
+    border-top: 1px solid var(--line);
+  }
+  .lib-feat {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 14px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .lib-feat .num { font-family: 'Geist Mono', monospace; font-size: 11.5px; color: var(--amber); padding-top: 2px; }
+  .lib-feat strong { display: block; font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .lib-feat span { color: var(--ink-2); font-size: 13.5px; line-height: 1.55; }
+
+  /* ---------- AGENT BAND ---------- */
+  .agent-band {
+    margin-top: 60px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(800px 300px at 20% 0%, rgba(245,181,71,.10), transparent 60%),
+      radial-gradient(700px 300px at 100% 100%, rgba(160,107,253,.10), transparent 60%),
+      var(--bg-2);
+    padding: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1.1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .agent-band h3 {
+    font-size: 30px;
+    letter-spacing: -0.022em;
+    font-weight: 500;
+    margin: 0 0 14px;
+    line-height: 1.05;
+  }
+  .agent-band p { color: var(--ink-2); font-size: 15.5px; margin: 0 0 22px; max-width: 440px; }
+  .agent-flow {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    line-height: 1.75;
+  }
+  .agent-flow .lbl {
+    display: flex; justify-content: space-between;
+    color: var(--ink-3); font-size: 11px; margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+  .agent-flow .step {
+    display: grid; grid-template-columns: 24px 1fr;
+    gap: 10px;
+    padding: 6px 0;
+  }
+  .agent-flow .step .n {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--amber-soft);
+    border: 1px solid var(--amber-line);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--amber); font-size: 11px;
+  }
+  .agent-flow .step .b { color: var(--ink); }
+  .agent-flow .step .b .dim { color: var(--ink-3); }
+
+  /* ---------- GIT DIFF ---------- */
+  .git-section { padding-top: 60px; }
+  .git-shell {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .git-shell-head {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg-3);
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-3);
+  }
+  .git-shell-head .br { color: var(--amber); }
+  .git-shell-head .actor { color: var(--ink-2); margin-left: auto; }
+  .git-shell-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .git-pane {
+    padding: 16px 20px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+  .git-pane.left { border-right: 1px solid var(--line); }
+  .git-pane h5 {
+    margin: 0 0 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--ink-3);
+    font-weight: 500;
+    font-family: 'Geist', sans-serif;
+  }
+  .ln {
+    display: grid; grid-template-columns: 28px 14px 1fr;
+    color: var(--ink-2);
+  }
+  .ln .num { color: var(--ink-4); }
+  .ln.add { background: rgba(74,222,128,.06); color: var(--green); }
+  .ln.add .num { color: rgba(74,222,128,.4); }
+  .ln.del { background: rgba(255,107,122,.06); color: var(--red); }
+  .ln.del .num { color: rgba(255,107,122,.4); }
+  .ln.ctx { color: var(--ink-2); }
+  .tag-pill { color: var(--blue); }
+
+  /* ---------- CTA ---------- */
+  .cta {
+    margin: 120px 0 80px;
+    text-align: center;
+    padding: 80px 32px;
+    border-radius: 20px;
+    border: 1px solid var(--line);
+    background:
+      radial-gradient(600px 300px at 50% 0%, rgba(245,181,71,.14), transparent 70%),
+      var(--bg-2);
+    position: relative;
+    overflow: hidden;
+  }
+  .cta::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,.025) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, #000 30%, transparent 80%);
+    -webkit-mask-image: radial-gradient(ellipse 60% 80% at 50% 50%, #000 30%, transparent 80%);
+    pointer-events: none;
+  }
+  .cta-inner { position: relative; }
+  .cta h2 {
+    font-size: clamp(36px, 5vw, 60px);
+    letter-spacing: -0.025em;
+    font-weight: 500;
+    margin: 0 0 16px;
+    line-height: 1.02;
+  }
+  .cta p { color: var(--ink-2); font-size: 17.5px; margin: 0 0 32px; }
+  .cta-actions { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* ---------- FOOTER ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 48px 0 64px;
+    color: var(--ink-3);
+    font-size: 13px;
+  }
+  footer .row {
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 20px;
+  }
+  footer .links { display: flex; gap: 24px; }
+  footer .links a { color: var(--ink-2); text-decoration: none; }
+  footer .links a:hover { color: var(--ink); }
+  footer .made { font-family: 'Geist Mono', monospace; font-size: 12px; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width: 920px) {
+    .nav-links { display: none; }
+    .install-grid, .lib-grid, .agent-band, .git-shell-body { grid-template-columns: 1fr; }
+    .agent-band { padding: 32px; }
+    .why.span-6, .why.span-4 { grid-column: span 12; }
+    .git-pane.left { border-right: none; border-bottom: 1px solid var(--line); }
+    .brand-domain { display: none; }
+  }
+  @media (max-width: 600px) {
+    .container { padding: 0 20px; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .install-line { width: 100%; }
+    .frame-caption { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="container nav-inner">
+    <a class="brand" href="#">
+      <img class="brand-logo" src="assets/ordna-logo.png" alt="Ordna logo" />
+      <span class="brand-name">ordna</span>
+      <span class="brand-domain">ordna.sh</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="#library">Library</a>
+      <a href="#agents">Agents</a>
+    </div>
+    <div class="nav-spacer"></div>
+    <div class="nav-cta">
+      <a class="pill" href="https://github.com/FreHilm/ordna" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.07c-3.2.7-3.87-1.37-3.87-1.37-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.45.11-3.03 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.74.11 3.03.74.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+        FreHilm/ordna
+      </a>
+      <a class="btn btn-primary" href="#install">
+        Get Ordna
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid"></div>
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <span class="eyebrow">
+      <span class="dot">O</span>
+      <strong>Ordna 0.4</strong>
+      <span class="div"></span>
+      <span class="ver">CLI · Web · Core</span>
+      <span class="div"></span>
+      <span class="ver">MIT</span>
+    </span>
+
+    <h1 class="hero-title">
+      A Kanban that lives <span class="serif amber-text">inside your repo.</span>
+    </h1>
+    <p class="hero-sub">
+      Ordna is a local-first, git-based task board you run from your terminal or your browser. No servers, no logins, no SaaS — just markdown files, plain commits, and an API your agents can drive.
+    </p>
+
+    <div class="hero-actions">
+      <span class="install-line" id="install-headline">
+        <span class="dim">$</span>
+        <span>npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;init</span>
+        <button id="copy-headline" title="Copy">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        </button>
+      </span>
+      <a class="btn btn-ghost" href="#features">
+        See what it does
+      </a>
+    </div>
+
+    <!-- SHOWCASE: real product screenshots -->
+    <div class="showcase">
+      <div class="showcase-tabs" role="tablist">
+        <button class="active" data-pane="tui" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 7 5 5-5 5M12 17h8"/></svg>
+          Terminal
+          <span class="pulse"></span>
+        </button>
+        <button data-pane="web" role="tab">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+          Browser
+        </button>
+      </div>
+
+      <div class="showcase-frame">
+        <div class="frame-chrome">
+          <div class="traffic"><span class="r"></span><span class="y"></span><span class="g"></span></div>
+          <div class="chrome-title mono" id="chrome-title">~/MyProjects/TestCode  ·  <span class="amber-text">ordna</span></div>
+          <div class="chrome-side"></div>
+        </div>
+        <div class="frame-body">
+          <div class="frame-pane active" data-pane="tui">
+            <img src="assets/ordna-tui.png" alt="Ordna TUI — keyboard-driven Kanban in the terminal with sidebar of views, priorities and tags, three columns of tasks." />
+            <div class="frame-caption mono"><span class="marker"></span> ordna board · 12 tasks · 3 columns</div>
+          </div>
+          <div class="frame-pane" data-pane="web">
+            <img src="assets/ordna-web.png" alt="Ordna Web — same board in the browser with cards, tags, assignees, progress and contextual edit actions." />
+            <div class="frame-caption mono"><span class="marker"></span> localhost:7421 · same .ordna/ files</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="container">
+    <div class="ticker-label">Built for the way you actually work</div>
+    <div class="ticker-row mono">
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 6h18M3 18h18"/></svg> markdown tasks</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg> works offline</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3v12a3 3 0 0 0 3 3h9"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="6" r="3"/><circle cx="18" cy="18" r="3"/></svg> branches as boards</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg> TUI &amp; Web</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2 4 6v6c0 5 4 8 8 10 4-2 8-5 8-10V6l-8-4z"/></svg> your data, your repo</span>
+      <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></svg> agent-ready API</span>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="block" id="features">
+  <div class="container">
+    <span class="sec-eyebrow">Why Ordna</span>
+    <h2 class="sec-title">A small tool with <span class="serif amber-text">strong opinions.</span></h2>
+    <p class="sec-sub">Every feature traces back to one idea: your tasks should live next to the code they describe — versioned, reviewable, and editable by anyone (or anything) that can edit a file.</p>
+
+    <div class="why-grid">
+      <!-- Big card: Git native -->
+      <div class="why span-6">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2.2"/><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="12" r="2.2"/><path d="M6 8.2v7.6M8.2 6h6.6a3 3 0 0 1 3 3v1"/></svg>
+        </div>
+        <h3>Git-native, by design</h3>
+        <p>Every task is a markdown file. Every move is a commit. Use the merge tools you already have to resolve conflicts, blame to find who changed what, and branches to plan what-ifs.</p>
+        <div class="feature-illu mono">
+          <span class="ln-meta">diff --git a/.ordna/doing/T-006.md b/.ordna/done/T-006.md</span><br/>
+          <span class="ln-del">- status: doing</span><br/>
+          <span class="ln-add">+ status: done</span><br/>
+          <span class="ln-add">+ closed_at: 2026-04-28T14:02Z</span><br/>
+          <span class="ln-meta">renamed: <span class="file">.ordna/doing/T-006.md</span> → <span class="file">.ordna/done/T-006.md</span></span>
+        </div>
+      </div>
+
+      <!-- Big card: Local first -->
+      <div class="why span-6">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7a8 4 0 0 0 16 0 8 4 0 0 0-16 0zM4 7v10c0 2.2 3.6 4 8 4s8-1.8 8-4V7M4 12c0 2.2 3.6 4 8 4s8-1.8 8-4"/></svg>
+        </div>
+        <h3>Local-first, no account required</h3>
+        <p>Boards live in <span class="mono" style="color: var(--ink); font-size: 13px;">.ordna/</span> in your repo. There is no Ordna server. There is nothing to sign up for. It works on a plane, and it works in 2032.</p>
+        <div class="feature-illu mono">
+          <span class="ln-meta">.ordna/</span><br/>
+          ├─ <span class="file">todo/</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ln-meta">5 tasks</span><br/>
+          ├─ <span class="file">doing/</span> &nbsp;&nbsp;&nbsp;<span class="ln-meta">3 tasks</span><br/>
+          ├─ <span class="file">done/</span> &nbsp;&nbsp;&nbsp;&nbsp;<span class="ln-meta">4 tasks</span><br/>
+          ├─ <span class="file">archived/</span> <span class="ln-meta">0 tasks</span><br/>
+          └─ <span class="file">board.json</span> &nbsp;<span class="ln-meta">columns &amp; settings</span>
+        </div>
+      </div>
+
+      <!-- Smaller cards -->
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v5"/></svg>
+        </div>
+        <h3>Two interfaces, one source</h3>
+        <p>A keyboard-driven TUI for the terminal and a polished web UI for the browser. Both read and write the exact same files.</p>
+      </div>
+
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 7v6c0 4.4 3.6 7.6 8 8 4.4-.4 8-3.6 8-8V7l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3>Your data, your laws</h3>
+        <p>Plain markdown + JSON, committed alongside your code. Migrate, grep, script, or quit any time — there is nothing to export.</p>
+      </div>
+
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+        </div>
+        <h3>Built for keyboard speed</h3>
+        <p>Every action — move, assign, create, filter, archive — is one or two keystrokes. Touch your mouse only when you want to.</p>
+      </div>
+
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19" cy="18" r="2"/></svg>
+        </div>
+        <h3>Tags, priorities &amp; views</h3>
+        <p>Filter by <span class="mono" style="color:var(--amber)">#frontend</span>, by <span class="mono" style="color:var(--amber)">@assignee</span>, by priority, or by saved views. Combine and refine without leaving the keyboard.</p>
+      </div>
+
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 2c2.5 3 4 7 4 10s-1.5 7-4 10c-2.5-3-4-7-4-10s1.5-7 4-10z"/></svg>
+        </div>
+        <h3>Branch-aware boards</h3>
+        <p>Different work on different branches stays on different branches. Merging brings the work with it — no duplicate tickets.</p>
+      </div>
+
+      <div class="why span-4">
+        <div class="why-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </div>
+        <h3>Embeddable core</h3>
+        <p>Drop <span class="mono" style="color:var(--amber)">@frehilm/ordna-core</span> into any Node project. Use it for dashboards, CI checks, scripts, or your own UI.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- INSTALL -->
+<section class="block" id="install">
+  <div class="container">
+    <span class="sec-eyebrow">Install</span>
+    <h2 class="sec-title">Up and running in <span class="serif amber-text">one command.</span></h2>
+    <p class="sec-sub">Pick your interface — terminal, browser, or both. They share the same on-disk format, so you can mix and match per project.</p>
+
+    <div class="install-tabs" role="tablist" aria-label="Install target">
+      <button class="active" data-tab="cli" role="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 7 5 5-5 5M12 17h8"/></svg>
+        Terminal (TUI)
+      </button>
+      <button data-tab="web" role="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+        Web UI
+      </button>
+      <button data-tab="lib" role="tab">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></svg>
+        Library
+      </button>
+    </div>
+
+    <div class="install-grid">
+      <!-- CODE -->
+      <div class="codeblock" id="cb">
+        <div class="codeblock-head">
+          <span class="file">$ shell <span id="cb-target" style="color: var(--amber)">— @frehilm/ordna-cli</span></span>
+          <button id="cb-copy">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            <span id="cb-copy-label">Copy</span>
+          </button>
+        </div>
+<pre id="cb-cli"><span class="c"># Install globally — one binary, no daemons</span>
+<span class="prompt">$</span> npm install -g <span class="v">@frehilm/ordna-cli</span>
+
+<span class="c"># Or run without installing</span>
+<span class="prompt">$</span> npx <span class="v">@frehilm/ordna-cli</span> init
+
+<span class="c"># Open the keyboard-driven board in your repo</span>
+<span class="prompt">$</span> ordna
+
+<span class="c"># Common commands</span>
+<span class="prompt">$</span> ordna add <span class="s">"Refund flow — partial amounts"</span>
+<span class="prompt">$</span> ordna move <span class="v">T-007</span> doing
+<span class="prompt">$</span> ordna list --status review
+<span class="prompt">$</span> ordna assign <span class="v">T-007</span> @fredrik</pre>
+
+<pre id="cb-web" style="display:none"><span class="c"># Install the web UI</span>
+<span class="prompt">$</span> npm install -g <span class="v">@frehilm/ordna-web</span>
+
+<span class="c"># Or run on demand inside any repo</span>
+<span class="prompt">$</span> npx <span class="v">@frehilm/ordna-web</span>
+
+<span class="c"># Starts a local server on http://localhost:7421</span>
+<span class="c"># Reads &amp; writes the same .ordna/ files as the TUI</span>
+
+<span class="c"># Pin a port, open browser automatically</span>
+<span class="prompt">$</span> ordna-web --port <span class="v">3030</span> --open
+
+<span class="c"># Read-only mode for demos &amp; CI dashboards</span>
+<span class="prompt">$</span> ordna-web --read-only</pre>
+
+<pre id="cb-lib" style="display:none"><span class="c"># Add the embeddable core to any Node project</span>
+<span class="prompt">$</span> npm install <span class="v">@frehilm/ordna-core</span>
+
+<span class="c"># Or with pnpm / bun / yarn</span>
+<span class="prompt">$</span> pnpm add <span class="v">@frehilm/ordna-core</span>
+<span class="prompt">$</span> bun  add <span class="v">@frehilm/ordna-core</span>
+
+<span class="c"># Then in your code</span>
+<span class="k">import</span> { openBoard } <span class="k">from</span> <span class="s">"@frehilm/ordna-core"</span>;
+
+<span class="k">const</span> board = <span class="k">await</span> <span class="f">openBoard</span>(process.cwd());
+<span class="k">await</span> board.<span class="f">move</span>(<span class="s">"T-006"</span>, <span class="s">"done"</span>);
+<span class="k">await</span> board.<span class="f">commit</span>(<span class="s">"chore: ordna sync"</span>);</pre>
+      </div>
+
+      <!-- SIDE -->
+      <div class="install-side">
+        <h4>Three packages on npm</h4>
+        <p>All MIT-licensed, all written in TypeScript, all share <span class="mono" style="color: var(--ink);">@frehilm/ordna-core</span> under the hood.</p>
+
+        <div class="npm-row">
+          <div>
+            <div class="name">@frehilm/ordna-cli</div>
+            <div class="desc">TUI &amp; commands · the daily driver</div>
+          </div>
+          <a href="https://www.npmjs.com/package/@frehilm/ordna-cli" target="_blank" rel="noopener">npm ↗</a>
+        </div>
+        <div class="npm-row">
+          <div>
+            <div class="name">@frehilm/ordna-web</div>
+            <div class="desc">Browser UI · zero-config local server</div>
+          </div>
+          <a href="https://www.npmjs.com/package/@frehilm/ordna-web" target="_blank" rel="noopener">npm ↗</a>
+        </div>
+        <div class="npm-row">
+          <div>
+            <div class="name">@frehilm/ordna-core</div>
+            <div class="desc">Library · read &amp; write boards programmatically</div>
+          </div>
+          <a href="https://www.npmjs.com/package/@frehilm/ordna-core" target="_blank" rel="noopener">npm ↗</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIBRARY -->
+<section class="block" id="library">
+  <div class="container">
+    <span class="sec-eyebrow">Library · @frehilm/ordna-core</span>
+    <h2 class="sec-title">Use Ordna as <span class="serif amber-text">a building block.</span></h2>
+    <p class="sec-sub">Everything the CLI and Web UI do, they do through the same public API. Embed it in dashboards, CI jobs, agent loops, or your own custom client.</p>
+
+    <div class="lib-grid">
+      <div class="lib-copy">
+        <h3>A boring, durable API.</h3>
+        <p>Promise-based, fully typed, no global state, no required runtime dependency apart from <span class="mono" style="color: var(--ink);">git</span>. Open a board, list it, mutate it, save it. That's the whole shape.</p>
+
+        <div class="lib-features">
+          <div class="lib-feat">
+            <span class="num">01</span>
+            <div>
+              <strong>openBoard(cwd)</strong>
+              <span>Locates <span class="mono">.ordna/</span>, validates schema, returns a typed board handle.</span>
+            </div>
+          </div>
+          <div class="lib-feat">
+            <span class="num">02</span>
+            <div>
+              <strong>board.tasks() &amp; board.columns()</strong>
+              <span>Stream the current state, filter by status, label, assignee, or branch.</span>
+            </div>
+          </div>
+          <div class="lib-feat">
+            <span class="num">03</span>
+            <div>
+              <strong>board.add / move / update / archive</strong>
+              <span>Mutations write atomically to disk — every change is a clean diff.</span>
+            </div>
+          </div>
+          <div class="lib-feat">
+            <span class="num">04</span>
+            <div>
+              <strong>board.commit(message)</strong>
+              <span>Stage and commit pending board changes through the user's existing git config.</span>
+            </div>
+          </div>
+          <div class="lib-feat">
+            <span class="num">05</span>
+            <div>
+              <strong>board.watch(handler)</strong>
+              <span>Subscribe to filesystem events — perfect for live dashboards and agent feedback loops.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="codeblock">
+        <div class="codeblock-head">
+          <span class="file">examples/standup-report.ts</span>
+          <button>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            View on GitHub
+          </button>
+        </div>
+<pre><span class="k">import</span> { openBoard } <span class="k">from</span> <span class="s">"@frehilm/ordna-core"</span>;
+
+<span class="c">// Read the board next to your code</span>
+<span class="k">const</span> board = <span class="k">await</span> <span class="f">openBoard</span>(process.cwd());
+
+<span class="c">// What did we ship since yesterday?</span>
+<span class="k">const</span> shipped = <span class="k">await</span> board.<span class="f">tasks</span>({
+  status: <span class="s">"done"</span>,
+  closedAfter: <span class="f">subDays</span>(<span class="k">new</span> <span class="f">Date</span>(), <span class="v">1</span>),
+});
+
+<span class="k">for</span> (<span class="k">const</span> task <span class="k">of</span> shipped) {
+  console.<span class="f">log</span>(<span class="s">`✓ </span><span class="v">${task.id}</span><span class="s"> </span><span class="v">${task.title}</span><span class="s">`</span>);
+}
+
+<span class="c">// Mutations are just function calls</span>
+<span class="k">await</span> board.<span class="f">add</span>({
+  title: <span class="s">"Schedule retro"</span>,
+  status: <span class="s">"todo"</span>,
+  tags: [<span class="s">"chore"</span>],
+});
+
+<span class="k">await</span> board.<span class="f">commit</span>(<span class="s">"chore: prep retro card"</span>);</pre>
+      </div>
+    </div>
+
+    <!-- AGENT BAND -->
+    <div class="agent-band" id="agents">
+      <div>
+        <h3>Agents that pull their <span class="serif amber-text">own work.</span></h3>
+        <p>Because every task is a file and every state change is a commit, an agent can plan, claim, and finish work end-to-end — and you review it as a normal pull request.</p>
+        <a class="btn btn-ghost" href="https://github.com/FreHilm/ordna" target="_blank" rel="noopener">
+          See the agent recipe
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+      <div class="agent-flow">
+        <div class="lbl"><span>agent loop</span><span style="color: var(--green);">● ready</span></div>
+        <div class="step"><span class="n">1</span><span class="b">board.<span style="color:#9eb4ff">tasks</span>({ status: <span style="color:var(--amber)">"todo"</span>, tag: <span style="color:var(--amber)">"agent"</span> }) <span class="dim">→ pick T-011</span></span></div>
+        <div class="step"><span class="n">2</span><span class="b">board.<span style="color:#9eb4ff">move</span>(<span style="color:var(--amber)">"T-011"</span>, <span style="color:var(--amber)">"doing"</span>) <span class="dim">// claim</span></span></div>
+        <div class="step"><span class="n">3</span><span class="b"><span class="dim">// run tools, edit code, run tests</span></span></div>
+        <div class="step"><span class="n">4</span><span class="b">board.<span style="color:#9eb4ff">comment</span>(<span style="color:var(--amber)">"T-011"</span>, <span style="color:var(--amber)">"draft PR opened"</span>)</span></div>
+        <div class="step"><span class="n">5</span><span class="b">board.<span style="color:#9eb4ff">move</span>(<span style="color:var(--amber)">"T-011"</span>, <span style="color:var(--amber)">"done"</span>) <span class="dim">// hand back</span></span></div>
+        <div class="step"><span class="n">6</span><span class="b">board.<span style="color:#9eb4ff">commit</span>(<span style="color:var(--amber)">"feat(mobile): expo shell"</span>)</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- GIT DIFF SECTION -->
+<section class="block git-section">
+  <div class="container">
+    <span class="sec-eyebrow">Git, the way you know it</span>
+    <h2 class="sec-title">Reviewable boards, <span class="serif amber-text">not magic dashboards.</span></h2>
+    <p class="sec-sub">Every plan, move, and decision shows up in <span class="mono" style="color: var(--ink);">git log</span>. Pair work, blame, bisect — all of it just works.</p>
+
+    <div class="git-shell">
+      <div class="git-shell-head mono">
+        <span style="color: var(--ink);">commit a4f1e2c</span>
+        <span>·</span>
+        <span class="br">⎇ feat/streaks</span>
+        <span>·</span>
+        <span>chore(ordna): T-006 → done</span>
+        <span class="actor">@fredrik · 2m ago</span>
+      </div>
+      <div class="git-shell-body">
+        <div class="git-pane left">
+          <h5>before — .ordna/doing/T-006.md</h5>
+          <div class="ln ctx"><span class="num">1</span><span></span><span>---</span></div>
+          <div class="ln ctx"><span class="num">2</span><span></span><span>id: T-006</span></div>
+          <div class="ln ctx"><span class="num">3</span><span></span><span>title: Streak calculation engine</span></div>
+          <div class="ln del"><span class="num">4</span><span>-</span><span>status: doing</span></div>
+          <div class="ln ctx"><span class="num">5</span><span></span><span>assignee: @fredrik</span></div>
+          <div class="ln ctx"><span class="num">6</span><span></span><span>tags: [<span class="tag-pill">backend</span>, <span class="tag-pill">logic</span>]</span></div>
+          <div class="ln del"><span class="num">7</span><span>-</span><span>progress: 2/5</span></div>
+          <div class="ln ctx"><span class="num">8</span><span></span><span>---</span></div>
+          <div class="ln ctx"><span class="num">9</span><span></span><span>Compute streaks per user across timezones,</span></div>
+          <div class="ln ctx"><span class="num">10</span><span></span><span>handling DST and freeze tokens.</span></div>
+        </div>
+        <div class="git-pane">
+          <h5>after — .ordna/done/T-006.md</h5>
+          <div class="ln ctx"><span class="num">1</span><span></span><span>---</span></div>
+          <div class="ln ctx"><span class="num">2</span><span></span><span>id: T-006</span></div>
+          <div class="ln ctx"><span class="num">3</span><span></span><span>title: Streak calculation engine</span></div>
+          <div class="ln add"><span class="num">4</span><span>+</span><span>status: done</span></div>
+          <div class="ln ctx"><span class="num">5</span><span></span><span>assignee: @fredrik</span></div>
+          <div class="ln ctx"><span class="num">6</span><span></span><span>tags: [<span class="tag-pill">backend</span>, <span class="tag-pill">logic</span>]</span></div>
+          <div class="ln add"><span class="num">7</span><span>+</span><span>progress: 5/5</span></div>
+          <div class="ln add"><span class="num">8</span><span>+</span><span>closed_at: 2026-04-28T14:02Z</span></div>
+          <div class="ln ctx"><span class="num">9</span><span></span><span>---</span></div>
+          <div class="ln ctx"><span class="num">10</span><span></span><span>Compute streaks per user across timezones,</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="container">
+  <div class="cta">
+    <div class="cta-inner">
+      <h2>Stop herding tabs. <span class="serif amber-text">Commit your plan.</span></h2>
+      <p>Ordna is small enough to learn in a coffee break, and stays out of your way for the next ten years.</p>
+      <div class="cta-actions">
+        <a class="btn btn-primary" href="#install">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 4v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+          Install Ordna
+        </a>
+        <a class="btn btn-ghost" href="https://github.com/FreHilm/ordna" target="_blank" rel="noopener">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.07c-3.2.7-3.87-1.37-3.87-1.37-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.69.08-.69 1.15.08 1.75 1.18 1.75 1.18 1.02 1.74 2.68 1.24 3.34.95.1-.74.4-1.24.72-1.53-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.45.11-3.03 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.74.11 3.03.74.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13v3.16c0 .31.21.67.8.55C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/></svg>
+          Star on GitHub
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container row">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <img src="assets/ordna-logo.png" alt="" style="width:24px;height:24px;border-radius:6px;" />
+      <div>
+        <div style="color: var(--ink); font-weight:500;">ordna</div>
+        <div class="made">ordna.sh · made by FreHilm</div>
+      </div>
+    </div>
+    <div class="links">
+      <a href="https://github.com/FreHilm/ordna" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://www.npmjs.com/package/@frehilm/ordna-cli" target="_blank" rel="noopener">CLI</a>
+      <a href="https://www.npmjs.com/package/@frehilm/ordna-web" target="_blank" rel="noopener">Web</a>
+      <a href="https://www.npmjs.com/package/@frehilm/ordna-core" target="_blank" rel="noopener">Core</a>
+    </div>
+    <div class="made">MIT — © 2026</div>
+  </div>
+</footer>
+
+<script>
+  // Showcase tabs
+  const showTabs = document.querySelectorAll('.showcase-tabs button');
+  const showPanes = document.querySelectorAll('.frame-pane');
+  const chromeTitle = document.getElementById('chrome-title');
+  const titles = {
+    tui: '~/MyProjects/TestCode  ·  <span class="amber-text">ordna</span>',
+    web: 'localhost:7421  ·  <span class="amber-text">ordna-web</span>'
+  };
+  showTabs.forEach(t => t.addEventListener('click', () => {
+    showTabs.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    const k = t.dataset.pane;
+    showPanes.forEach(p => p.classList.toggle('active', p.dataset.pane === k));
+    chromeTitle.innerHTML = titles[k];
+  }));
+
+  // Install tabs
+  const tabs = document.querySelectorAll('.install-tabs button');
+  const panes = { cli: document.getElementById('cb-cli'), web: document.getElementById('cb-web'), lib: document.getElementById('cb-lib') };
+  const targetLabel = document.getElementById('cb-target');
+  const labels = { cli: '— @frehilm/ordna-cli', web: '— @frehilm/ordna-web', lib: '— @frehilm/ordna-core' };
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    Object.values(panes).forEach(p => p.style.display = 'none');
+    const k = t.dataset.tab;
+    panes[k].style.display = 'block';
+    targetLabel.textContent = labels[k];
+  }));
+
+  // Copy buttons
+  function attachCopy(btnId, getText, labelEl) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(getText());
+        if (labelEl) {
+          const orig = labelEl.textContent;
+          labelEl.textContent = 'Copied';
+          setTimeout(() => labelEl.textContent = orig, 1200);
+        } else {
+          btn.style.color = 'var(--green)';
+          setTimeout(() => btn.style.color = '', 900);
+        }
+      } catch (e) {}
+    });
+  }
+  attachCopy('copy-headline', () => 'npx @frehilm/ordna-cli init');
+  attachCopy('cb-copy', () => {
+    const visible = Object.values(panes).find(p => p.style.display !== 'none') || panes.cli;
+    return visible.innerText;
+  }, document.getElementById('cb-copy-label'));
+</script>
+
+</body>
+</html>
