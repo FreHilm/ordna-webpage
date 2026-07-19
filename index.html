@@ -170,7 +170,17 @@
     margin: 0 0 36px;
   }
 
-  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 56px; }
+  .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 56px; }
+  .cmd-stack { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+  .cmd-caption {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--amber);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .cmd-caption::before { content: ""; width: 14px; height: 1px; background: var(--amber); }
   .install-line {
     display: inline-flex; align-items: center; gap: 12px;
     height: 38px; padding: 0 6px 0 16px;
@@ -886,6 +896,7 @@
     .pill-long { display: none; }
     .pill-short { display: inline; }
     .hero-actions { flex-direction: column; align-items: stretch; }
+    .cmd-stack { width: 100%; }
     .install-line { width: 100%; }
     .frame-caption { display: none; }
   }
@@ -930,7 +941,7 @@
   <div class="container hero-inner">
     <span class="eyebrow">
       <span class="dot">O</span>
-      <strong>Ordna 0.2.0</strong>
+      <strong>Ordna 0.3.0</strong>
       <span class="div"></span>
       <span class="ver">CLI · Web · Core</span>
       <span class="div"></span>
@@ -945,13 +956,16 @@
     </p>
 
     <div class="hero-actions">
-      <span class="install-line" id="install-headline">
-        <span class="dim">$</span>
-        <span>npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;ordna</span>
-        <button id="copy-headline" title="Copy">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-        </button>
-      </span>
+      <div class="cmd-stack">
+        <span class="cmd-caption">Take it for a test drive</span>
+        <span class="install-line" id="install-headline">
+          <span class="dim">$</span>
+          <span id="install-cmd">npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;ordna</span>
+          <button id="copy-headline" title="Copy">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+          </button>
+        </span>
+      </div>
       <a class="btn btn-ghost" href="#features">
         See what it does
       </a>
@@ -1139,14 +1153,15 @@
 <span class="c"># Or run without installing</span>
 <span class="prompt">$</span> npx <span class="v">@frehilm/ordna-cli</span> ordna
 
-<span class="c"># Open the keyboard-driven board in your repo</span>
+<span class="c"># Open the keyboard-driven board in your repo - TUI</span>
 <span class="prompt">$</span> ordna
 
 <span class="c"># Common commands</span>
 <span class="prompt">$</span> ordna add <span class="s">"Refund flow — partial amounts"</span>
 <span class="prompt">$</span> ordna move <span class="v">T-007</span> doing
 <span class="prompt">$</span> ordna list --status review
-<span class="prompt">$</span> ordna assign <span class="v">T-007</span> @fredrik</pre>
+<span class="prompt">$</span> ordna assign <span class="v">T-007</span> @fredrik
+<span class="prompt">$</span> ordna attach <span class="v">T-007</span> mockup.png</pre>
 
 <pre id="cb-web" style="display:none"><span class="c"># Install the web UI</span>
 <span class="prompt">$</span> npm install -g <span class="v">@frehilm/ordna-web</span>
@@ -1212,7 +1227,7 @@
 <!-- STORAGE -->
 <section class="block" id="storage">
   <div class="container">
-    <span class="sec-eyebrow">Storage · new in 0.2</span>
+    <span class="sec-eyebrow">Storage</span>
     <h2 class="sec-title">Three places <span class="serif amber-text">tasks can live.</span></h2>
     <p class="sec-sub">By default, tasks are plain markdown files in <span class="mono" style="color:var(--ink)">tasks/</span> — the mode this page has been describing. Two opt-in alternatives change where tasks are stored: one keeps the file ergonomics but adds safe IDs across offline writers, the other moves tasks into git refs so your working tree stays untouched.</p>
 
@@ -1503,16 +1518,28 @@
   const showTabs = document.querySelectorAll('.showcase-tabs button');
   const showPanes = document.querySelectorAll('.frame-pane');
   const chromeTitle = document.getElementById('chrome-title');
+  const installCmd = document.getElementById('install-cmd');
   const titles = {
     tui: '~/MyProjects/TestCode  ·  <span class="amber-text">ordna</span>',
     web: 'localhost:7421  ·  <span class="amber-text">ordna-web</span>'
   };
+  const headlineCmds = {
+    tui: 'npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;ordna',
+    web: 'npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-web</span>'
+  };
+  const headlineCopy = {
+    tui: 'npx @frehilm/ordna-cli ordna',
+    web: 'npx @frehilm/ordna-web'
+  };
+  let currentPane = 'tui';
   showTabs.forEach(t => t.addEventListener('click', () => {
     showTabs.forEach(x => x.classList.remove('active'));
     t.classList.add('active');
     const k = t.dataset.pane;
+    currentPane = k;
     showPanes.forEach(p => p.classList.toggle('active', p.dataset.pane === k));
     chromeTitle.innerHTML = titles[k];
+    installCmd.innerHTML = headlineCmds[k];
   }));
 
   // Install tabs
@@ -1547,7 +1574,7 @@
       } catch (e) {}
     });
   }
-  attachCopy('copy-headline', () => 'npx @frehilm/ordna-cli ordna');
+  attachCopy('copy-headline', () => headlineCopy[currentPane]);
   attachCopy('cb-copy', () => {
     const visible = Object.values(panes).find(p => p.style.display !== 'none') || panes.cli;
     return visible.innerText;
