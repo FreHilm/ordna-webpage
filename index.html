@@ -6,6 +6,12 @@
 <title>Ordna — Local, git-based, agent-ready Kanban</title>
 <meta name="description" content="A Kanban that lives in your repo. Run it in your terminal, in your browser, or wire it straight into your agents. No servers, no logins, no lock-in." />
 
+<link rel="icon" href="assets/favicon.ico" sizes="48x48" />
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png" />
+<link rel="icon" type="image/png" sizes="192x192" href="assets/favicon-192.png" />
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
@@ -198,6 +204,36 @@
     display: inline-flex; align-items: center; justify-content: center;
   }
   .install-line button:hover { color: var(--ink); background: var(--line); }
+
+  .cmd-card {
+    display: flex; flex-direction: column;
+    border-radius: 10px;
+    background: var(--bg-3); border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .cmd-row {
+    display: flex; align-items: center; gap: 12px;
+    height: 42px; padding: 0 8px 0 14px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 13px; color: var(--ink);
+  }
+  .cmd-row + .cmd-row { border-top: 1px solid var(--line); }
+  .cmd-row .dim { color: var(--ink-3); }
+  .cmd-tag {
+    width: 54px; flex-shrink: 0;
+    font-size: 10px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    color: var(--ink-3);
+  }
+  .cmd-text { flex: 1; white-space: nowrap; }
+  .cmd-row button {
+    height: 28px; width: 28px; flex-shrink: 0;
+    border: none; background: var(--bg-2);
+    border-radius: 5px; color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .cmd-row button:hover { color: var(--ink); background: var(--line); }
 
   /* ---------- SHOWCASE (real screenshots) ---------- */
   .showcase {
@@ -898,6 +934,9 @@
     .hero-actions { flex-direction: column; align-items: stretch; }
     .cmd-stack { width: 100%; }
     .install-line { width: 100%; }
+    .cmd-card { width: 100%; }
+    .cmd-tag { display: none; }
+    .cmd-text { overflow-x: auto; }
     .frame-caption { display: none; }
   }
 </style>
@@ -957,14 +996,25 @@
 
     <div class="hero-actions">
       <div class="cmd-stack">
-        <span class="cmd-caption">Take it for a test drive</span>
-        <span class="install-line" id="install-headline">
-          <span class="dim">$</span>
-          <span id="install-cmd">npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;ordna</span>
-          <button id="copy-headline" title="Copy">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
-          </button>
-        </span>
+        <span class="cmd-caption">Get started in seconds</span>
+        <div class="cmd-card">
+          <div class="cmd-row">
+            <span class="cmd-tag">Try</span>
+            <span class="dim">$</span>
+            <span class="cmd-text" id="install-cmd">npx&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>&nbsp;ordna</span>
+            <button id="copy-headline" title="Copy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            </button>
+          </div>
+          <div class="cmd-row">
+            <span class="cmd-tag">Install</span>
+            <span class="dim">$</span>
+            <span class="cmd-text" id="install-cmd-global">npm&nbsp;install&nbsp;-g&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span></span>
+            <button id="copy-headline-global" title="Copy">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
       <a class="btn btn-ghost" href="#features">
         See what it does
@@ -1531,6 +1581,15 @@
     tui: 'npx @frehilm/ordna-cli ordna',
     web: 'npx @frehilm/ordna-web'
   };
+  const installCmdGlobal = document.getElementById('install-cmd-global');
+  const globalCmds = {
+    tui: 'npm&nbsp;install&nbsp;-g&nbsp;<span style="color: var(--amber);">@frehilm/ordna-cli</span>',
+    web: 'npm&nbsp;install&nbsp;-g&nbsp;<span style="color: var(--amber);">@frehilm/ordna-web</span>'
+  };
+  const globalCopy = {
+    tui: 'npm install -g @frehilm/ordna-cli',
+    web: 'npm install -g @frehilm/ordna-web'
+  };
   let currentPane = 'tui';
   showTabs.forEach(t => t.addEventListener('click', () => {
     showTabs.forEach(x => x.classList.remove('active'));
@@ -1540,6 +1599,7 @@
     showPanes.forEach(p => p.classList.toggle('active', p.dataset.pane === k));
     chromeTitle.innerHTML = titles[k];
     installCmd.innerHTML = headlineCmds[k];
+    installCmdGlobal.innerHTML = globalCmds[k];
   }));
 
   // Install tabs
@@ -1575,6 +1635,7 @@
     });
   }
   attachCopy('copy-headline', () => headlineCopy[currentPane]);
+  attachCopy('copy-headline-global', () => globalCopy[currentPane]);
   attachCopy('cb-copy', () => {
     const visible = Object.values(panes).find(p => p.style.display !== 'none') || panes.cli;
     return visible.innerText;
