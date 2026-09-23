@@ -896,6 +896,20 @@
   }
   .cta p { color: var(--ink-2); font-size: 17.5px; margin: 0 0 32px; }
   .cta-actions { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .cta p.cta-coffee {
+    margin: 26px 0 0;
+    font-size: 13.5px;
+    color: var(--ink-3);
+  }
+  .cta-coffee a {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--amber); text-decoration: none;
+    border-bottom: 1px solid var(--amber-line);
+    padding-bottom: 1px;
+    transition: border-color .15s;
+  }
+  .cta-coffee a:hover { border-color: var(--amber); }
+  .cta-coffee a svg { width: 14px; height: 14px; }
 
   /* ---------- FOOTER ---------- */
   footer {
@@ -908,9 +922,15 @@
     display: flex; justify-content: space-between; align-items: center;
     flex-wrap: wrap; gap: 20px;
   }
-  footer .links { display: flex; gap: 24px; }
+  footer .links { display: flex; gap: 24px; align-items: center; }
   footer .links a { color: var(--ink-2); text-decoration: none; }
   footer .links a:hover { color: var(--ink); }
+  footer .links a.coffee {
+    display: inline-flex; align-items: center; gap: 7px;
+    color: var(--amber);
+  }
+  footer .links a.coffee:hover { color: var(--ink); }
+  footer .links a.coffee svg { width: 14px; height: 14px; }
   footer .made { font-family: 'Geist Mono', monospace; font-size: 12px; }
 
   /* ---------- RESPONSIVE ---------- */
@@ -1539,6 +1559,11 @@
           Star on GitHub
         </a>
       </div>
+      <p class="cta-coffee">Free &amp; MIT-licensed. If Ordna saves you time,
+        <br /> <a href="https://buymeacoffee.com/frehilm" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M8 2.5v2.5M12 2.5v2.5"/></svg>
+          buy me a coffee</a>.
+      </p>
     </div>
   </div>
 </section>
@@ -1558,6 +1583,10 @@
       <a href="https://www.npmjs.com/package/@frehilm/ordna-cli" target="_blank" rel="noopener">CLI</a>
       <a href="https://www.npmjs.com/package/@frehilm/ordna-web" target="_blank" rel="noopener">Web</a>
       <a href="https://www.npmjs.com/package/@frehilm/ordna-core" target="_blank" rel="noopener">Core</a>
+      <a class="coffee" href="https://buymeacoffee.com/frehilm" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 9h1.5a2.5 2.5 0 0 1 0 5H17M4 9h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9z"/><path d="M8 2.5v2.5M12 2.5v2.5"/></svg>
+        Buy me a coffee
+      </a>
     </div>
     <div class="made">MIT — © 2026</div>
   </div>
